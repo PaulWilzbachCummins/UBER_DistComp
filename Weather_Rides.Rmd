@@ -1,0 +1,193 @@
+---
+title: "Weather_Rides"
+author: "Paul"
+output: html_document
+---
+
+```{r}
+library('tidyverse')
+```
+
+
+```{r}
+df <- read.csv("weather_rides.csv")
+```
+
+```{r}
+#df
+```
+
+```{r}
+colSums(df[17])
+```
+
+
+
+
+Barchart weather type, # of days
+```{r}
+barplot(colSums(df[,17:22]), main="Weather Type Frequency",xpd=FALSE, ylim=c(0,125),ylab="Total Days",axes=TRUE,col = c("khaki1","cadetblue1","lightcyan","antiquewhite","azure3","snow"),names.arg = c("No Weather","Rain", "Mist", "Haze", "Fog", "Snow") )
+text(0.7, 120, colSums(df[17]))
+text(1.9, 64, colSums(df[18]))
+text(3.1, 60, colSums(df[19]))
+text(4.3, 35, colSums(df[20]))
+text(5.5, 17, colSums(df[21]))
+text(6.7, 10, colSums(df[22]))
+```
+
+
+
+
+
+Barchart weather type, avg total ride
+```{r}
+
+Weather <- c("No.Weather.Type","Rain", "Mist", "Haze", "Fog", "Snow")
+AverageRides <- c(mean(df[df$No.Weather.Type==1,]$TotalRides),
+                  mean(df[df$Rain==1,]$TotalRides),
+                  mean(df[df$Mist==1,]$TotalRides),
+                  mean(df[df$Haze==1,]$TotalRides),
+                  mean(df[df$Fog==1,]$TotalRides),
+                  mean(df[df$Snow==1,]$TotalRides))
+
+df2 <- data.frame(Weather, AverageRides)
+df2
+barplot(df2$AverageRides, main="Rides per Day by Weather Type",xpd=FALSE, ylim=c(10000,30000),col = c("khaki1","cadetblue1","lightcyan","antiquewhite","azure3","snow"),ylab="Average Rides Per Day",names.arg = c("No Weather","Rain", "Mist", "Haze", "Fog", "Snow"))
+
+# mean(df[df$No.Weather.Type==1,]$TotalRides)
+# mean(df[df$Rain==1,]$TotalRides)
+# mean(df[df$Mist==1,]$TotalRides)
+# mean(df[df$Haze==1,]$TotalRides)
+# mean(df[df$Fog==1,]$TotalRides)
+# mean(df[df$Snow==1,]$TotalRides)
+```
+
+histograms/boxplots numeric predictors
+```{r}
+#example code
+# boxplot(Temp~Month,
+# data=airquality,
+# main="Temperature Distribution by Month",
+# xlab="Month",
+# ylab="Degrees (F)",
+# col="steelblue",
+# border="black"
+# )
+```
+
+```{r}
+library('psych')
+
+df4 <- df %>% select(TotalRides,DailyPrecipitation,DailyAverageRelativeHumidity,DailyAverageWindSpeed,DailyAverageDryBulbTemperature,DailyDepartureFromNormalAverageTemperature)
+
+df4$DailyPrecipitation <- as.double(df4$DailyPrecipitation)
+
+df4 <- df4 %>% rename(Rides=TotalRides,Precipitation=DailyPrecipitation,Humidity=DailyAverageRelativeHumidity,WindSpeed=DailyAverageWindSpeed,Temperature=DailyAverageDryBulbTemperature,TempDeviation=DailyDepartureFromNormalAverageTemperature)
+
+corPlot(df4,stars = TRUE,mar =  c(10.1, 4.1, 4.1, 2.1),diag=FALSE)
+
+#?corPlot
+
+```
+
+histogram temp deviation
+average rides above and below normal temp, 2 per above/below
+```{r}
+hist(df$DailyDepartureFromNormalAverageTemperature, breaks=20,main="Distribution of Temperature Deviations",xlab="Deviation from Normal Average Temperature (°F)",col="cadetblue1",xlim=c(-15,15),ylim=c(0,20))
+hist(df$DailyAverageDryBulbTemperature, breaks=20,main="Temperature Distribution",xlab="Temperature (°F)",col="cadetblue1",xlim=c(40,90))
+```
+
+```{r}
+cold <- df[df$DailyDepartureFromNormalAverageTemperature<0,]
+hot <- df[df$DailyDepartureFromNormalAverageTemperature>0,]
+
+cold1 <- cold[cold$DailyDepartureFromNormalAverageTemperature<mean(cold$DailyDepartureFromNormalAverageTemperature),]
+
+cold2 <- cold[cold$DailyDepartureFromNormalAverageTemperature>=mean(cold$DailyDepartureFromNormalAverageTemperature),]
+
+hot1 <- hot[hot$DailyDepartureFromNormalAverageTemperature<mean(hot$DailyDepartureFromNormalAverageTemperature),]
+
+hot2 <- hot[hot$DailyDepartureFromNormalAverageTemperature>=mean(hot$DailyDepartureFromNormalAverageTemperature),]
+
+
+
+temp_vec <- c("cold1","cold2","hot1","hot2")
+AverageRides <- c(mean(cold1$TotalRides),
+                  mean(cold2$TotalRides),
+                  mean(hot1$TotalRides),
+                  mean(hot2$TotalRides))
+
+df3 <- data.frame(temp_vec, AverageRides)
+
+mean(cold1$TotalRides)
+mean(cold2$TotalRides)
+mean(hot1$TotalRides)
+mean(hot2$TotalRides)
+```
+
+
+
+```{r}
+barplot(df3$AverageRides, main="Average Rides by Relative Temperature Deviation",col = c("blue1","cadetblue1","coral1","firebrick1"),ylab="Average Rides per Day",names.arg = c("Coldest","Colder","Hotter","Hottest"),ylim=c(20000,28000),xpd = FALSE)
+```
+
+
+
+
+
+```{r}
+summary(df4$Temperature)
+
+Coldest <- subset(df4, Temperature <= 63)
+Colder <- subset(df4, Temperature <= 71 & Temperature > 63)
+Hotter <- subset(df4, Temperature <= 75 & Temperature > 71)
+Hottest <- subset(df4, Temperature > 75)
+
+
+temp_vec <- c("cold1","cold2","hot1","hot2")
+AverageRides <- c(mean(Coldest$Rides),
+                  mean(Colder$Rides),
+                  mean(Hotter$Rides),
+                  mean(Hottest$Rides))
+
+df6 <- data.frame(temp_vec, AverageRides)
+
+
+barplot(df6$AverageRides, main="Average Rides by Temperature Quartiles",col = c("blue1","cadetblue1","coral1","firebrick1"),ylab="Average Rides per Day",names.arg = c("Coldest","Colder","Hotter","Hottest"),xpd = FALSE)
+```
+
+
+```{r}
+mean(Coldest$Rides)
+                  mean(Colder$Rides)
+                  mean(Hotter$Rides)
+                  mean(Hottest$Rides)
+```
+
+
+scatterplots + regression models  numeric predictors, ride total
+comment on models significance.
+```{r}
+lm1 <- lm(Rides~Humidity,data=df4)
+summary(lm1)
+plot(Rides~Humidity,data=df4,pch=20,main="Rides vs. Humidity")
+abline(lm1)
+```
+```{r}
+df5 <- df4[df4$Precipitation>0,]
+#df5
+
+lm2 <- lm(Rides~Precipitation,data=df5)
+summary(lm2)
+plot(Rides~Precipitation,data=df5,pch=20,main="Rides vs. Precipitation")
+abline(lm2)
+```
+
+```{r}
+lm3 <- lm(Rides~Temperature,data=df4)
+summary(lm3)
+plot(Rides~Temperature,data=df4,pch=20,main="Rides vs. Temperature")
+abline(lm3)
+```
+
+

@@ -1,0 +1,121 @@
+---
+title: "Weather Data Preprocessing"
+author: "Paul"
+output: html_document
+---
+
+```{r}
+library(dplyr)
+```
+
+
+```{r}
+#df <- read.csv("uber-raw-data-janjune-15.csv")
+noaa.df <- read.csv("NYCweather_hourly_full.csv")
+```
+
+
+```{r}
+#df
+noaa.df
+```
+
+```{r}
+colnames(noaa.df)
+```
+
+```{r}
+df <- noaa.df %>% 
+  filter(noaa.df$REPORT_TYPE == 'SOD  ') %>% #Only daily records
+  subset(select = c("DATE","DailyPrecipitation","DailyAverageRelativeHumidity",
+                    "DailyAverageWindSpeed",
+                    "DailyPeakWindSpeed",
+                    "DailyAverageDewPointTemperature",
+                    "DailyAverageDryBulbTemperature",
+                    "DailyAverageWetBulbTemperature",
+                    "DailyMaximumDryBulbTemperature",
+                    "DailyMinimumDryBulbTemperature",
+                    "DailyDepartureFromNormalAverageTemperature",
+                    "DailySnowfall","DailySnowDepth","DailyWeather")) 
+
+df$DATE = substr(df$DATE,1,10)
+df <- rename(df,Date = DATE)
+```
+
+
+
+```{r}
+df2 <- read.csv("rides_by_date.csv")
+#colnames(df2)
+
+df2 <- rename(df2, Date = X)
+df2 <- rename(df2, TotalRides = Total.Rides)
+df2 <- rename(df2, "7DayAvgRides" = X7.Day.Average.Rides)
+#df2
+
+df3 <- left_join(df2, df, by='Date')
+df3
+```
+
+
+
+```{r}
+unique(df3$DailyWeather)
+```
+
+RA = Rain
+BR = Mist
+HZ = Haze
+FG = Fog
+SN = Snow
+
+```{r}
+df3$No.Weather.Type <- 0
+df3$Rain <- 0
+df3$Mist <- 0
+df3$Haze <- 0
+df3$Fog <- 0
+df3$Snow <- 0
+
+
+df3[df3$DailyWeather=='',]$No.Weather.Type <-  1
+df3[df3$DailyWeather=='RA',]$Rain <-  1
+df3[df3$DailyWeather=='RA BR HZ',]$Rain <-  1
+df3[df3$DailyWeather=='RA FG BR',]$Rain <-  1
+df3[df3$DailyWeather=='RA SN BR',]$Rain <-  1
+df3[df3$DailyWeather=='RA BR',]$Rain <-  1
+df3[df3$DailyWeather=='RA FG BR HZ',]$Rain <-  1
+df3[df3$DailyWeather=='RA HZ',]$Rain <-  1
+df3[df3$DailyWeather=='RA BR HZ',]$Mist <-  1
+df3[df3$DailyWeather=='BR',]$Mist <-  1
+df3[df3$DailyWeather=='RA FG BR',]$Mist <-  1
+df3[df3$DailyWeather=='RA SN BR',]$Mist <-  1
+df3[df3$DailyWeather=='RA BR',]$Mist <-  1
+df3[df3$DailyWeather=='RA FG BR HZ',]$Mist <-  1
+df3[df3$DailyWeather=='BR HZ',]$Mist <-  1
+df3[df3$DailyWeather=='RA BR HZ',]$Haze <-  1
+df3[df3$DailyWeather=='RA FG BR HZ',]$Haze <-  1
+df3[df3$DailyWeather=='HZ',]$Haze <-  1
+df3[df3$DailyWeather=='BR HZ',]$Haze <-  1
+df3[df3$DailyWeather=='RA HZ',]$Haze <-  1
+df3[df3$DailyWeather=='RA FG BR',]$Fog <-  1
+df3[df3$DailyWeather=='RA FG BR HZ',]$Fog <-  1
+df3[df3$DailyWeather=='RA SN BR',]$Snow <-  1
+df3[df3$DailySnowfall=='T',]$Snow <-  1
+
+df3 <- df3 %>% select(-c("DailyWeather"))
+df3
+```
+
+
+
+```{r}
+write.csv(df3, "weather_rides.csv")
+```
+
+
+
+
+
+
+

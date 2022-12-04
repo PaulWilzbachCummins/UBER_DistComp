@@ -1,0 +1,57 @@
+---
+title: "Untitled"
+author: "Mei Maddox"
+date: "5/4/2022"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(dplyr)
+library(ggplot2)
+library(ggpubr)
+
+rides.to.gas <- readr::read_csv("./data/rides_to_gas.csv")
+rides.to.gas.melted <- readr::read_csv("./data/rides_to_gas_melted.csv")
+```
+
+## Visualizations
+
+```{r echo=FALSE}
+scatter <- ggplot(rides.to.gas.melted, aes(x=NYC, y=Rides, color = Metric)) + geom_point() + geom_rug(sides="l") + theme_pubr() + theme(legend.position = c(0.25, 0.15), legend.title = element_blank()) + labs(x = "Cents Per Gallon", y = "Ride Count")
+
+marginal_distribution <- function(x, var, group, flip = F) {
+  hist <- ggplot(x, aes_string(x = var, fill = group, group = group)) +
+    geom_histogram(aes(y=..density..), bins = 30, alpha = 0.4, position = "identity") +
+    geom_density(aes(fill = NULL), alpha = 0.4, size = 1) +
+    guides(fill = 'none') + # theme(legend.position = "none")
+    theme_void() +
+    {if (flip) coord_flip()}
+  box <- ggplot(x, aes_string(x = var, fill = group)) +
+    geom_boxplot(outlier.shape=21, outlier.alpha=0.3)+
+    guides(fill = 'none') +
+    ggplot2::theme_void() +
+    {if (flip) coord_flip()}
+  {if (flip) cowplot::plot_grid(box, hist, ncol = 2, rel_widths = c(0.15, 0.85), align = 'h', axis = 'tb') else cowplot::plot_grid(hist, box, ncol = 1, rel_heights = c(0.85, 0.15), align = 'v', axis = 'lr')}
+}
+
+gas <- marginal_distribution(rides.to.gas.melted, "NYC", "NULL")
+rides <- marginal_distribution(rides.to.gas.melted, "Rides", "Metric", flip = T)
+
+gas + patchwork::plot_spacer() + scatter + rides + 
+  patchwork::plot_layout(ncol = 2, nrow = 2, widths = c(4, 1), heights = c(1, 4))
+
+# cowplot::plot_grid(gas, NULL, scatter, rides, ncol = 2, axis = 'hv', align = "hv", rel_widths = c(2, 1), rel_heights = c(1, 2))
+```
+
+```{r eval=FALSE, include=FALSE}
+ggscatterhist(
+  rides.to.gas.melted, x = "NYC", y = "Rides",
+  color = "Metric",
+  margin.plot = "boxplot",
+  margin.params = list(fill = "Metric", color = "black") # , size = 0.2
+)
+```
